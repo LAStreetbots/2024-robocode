@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.Launcher;
 import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.DriveSubsystem;
@@ -44,8 +45,7 @@ public class RobotContainer {
 
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
-  XboxController m_partnerDriverController =
-      new XboxController(OIConstants.kPartnerDriverControllerPort);
+  XboxController m_PartnerDriverController = new XboxController(OIConstants.kpartnerDriverControllerPort);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -80,6 +80,10 @@ public class RobotContainer {
     m_launcher.setDefaultCommand(new RunCommand(() -> m_launcher.stopLauncher(), m_launcher));
   }
 
+  public ArmSubsystem getArmSubsystem() {
+    return m_arm;
+  }
+
   /**
    * Use this method to define your button->command mappings. Buttons can be created by
    * instantiating a {@link edu.wpi.first.wpilibj.GenericHID} or one of its subclasses ({@link
@@ -92,35 +96,48 @@ public class RobotContainer {
         .whileTrue(new RunCommand(() -> m_robotDrive.setX(), m_robotDrive));
 
     // set up arm preset positions
-    new JoystickButton(m_partnerDriverController, XboxController.Button.kLeftBumper.value)
+    new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value)
         .onTrue(new InstantCommand(() -> m_arm.setTargetPosition(Constants.Arm.kScoringPosition)));
+    
+            // Arm Intake Command - Left Trigger
     new Trigger(
             () ->
-                m_partnerDriverController.getLeftTriggerAxis()
+                m_driverController.getLeftTriggerAxis()
                     > Constants.OIConstants.kTriggerButtonThreshold)
         .onTrue(new InstantCommand(() -> m_arm.setTargetPosition(Constants.Arm.kIntakePosition)));
-
-    new JoystickButton(m_partnerDriverController, XboxController.Button.kStart.value)
+    
+        new JoystickButton(m_driverController, XboxController.Button.kStart.value)
         .onTrue(new InstantCommand(() -> m_arm.setTargetPosition(Constants.Arm.kHomePosition)));
 
-    // intake controls (run while button is held down, run retract command once when the button is
-    // released)
-    new Trigger(
+            // Arm Hang Command - Right Trigger
+        new Trigger(
             () ->
-                m_partnerDriverController.getRightTriggerAxis()
+                m_driverController.getRightTriggerAxis()
                     > Constants.OIConstants.kTriggerButtonThreshold)
-        .whileTrue(new RunCommand(() -> m_intake.setPower(Constants.Intake.kIntakePower), m_intake))
-        .onFalse(m_intake.retract());
+        .onTrue(new InstantCommand(() -> m_arm.setTargetPosition(Constants.Arm.kArmHangPosition)));
+        
+    // intake controls
+  
+    new JoystickButton(m_PartnerDriverController, XboxController.Button.kY.value)
+        .whileTrue(new RunCommand(() -> m_intake.setPower(Constants.Intake.kIntakePower)));
 
-    new JoystickButton(m_partnerDriverController, XboxController.Button.kY.value)
-        .whileTrue(new RunCommand(() -> m_intake.setPower(-1.0)));
+    new JoystickButton(m_driverController, XboxController.Button.kY.value)
+        .whileTrue(new RunCommand(() -> m_intake.setPower(Constants.Intake.kIntakePower)));
 
-    // launcher controls (button to pre-spin the launcher and button to launch)
-    new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value)
+    //reverse intake controls
+    new JoystickButton(m_PartnerDriverController, XboxController.Button.kB.value)
+        .whileTrue(new RunCommand(() -> m_intake.setPower(Constants.Intake.kreverseIntakePower)));
+
+     new JoystickButton(m_driverController, XboxController.Button.kB.value)
+        .whileTrue(new RunCommand(() -> m_intake.setPower(Constants.Intake.kreverseIntakePower)));
+
+    // Speaker launcher Controls 
+    new JoystickButton(m_PartnerDriverController, XboxController.Button.kRightBumper.value)
         .whileTrue(new RunCommand(() -> m_launcher.runLauncher(), m_launcher));
 
-    new JoystickButton(m_partnerDriverController, XboxController.Button.kA.value)
-        .onTrue(m_intake.feedLauncher(m_launcher));
+    // Amp Launcher Controls
+   new JoystickButton(m_PartnerDriverController, XboxController.Button.kLeftBumper.value)
+        .whileTrue(new RunCommand(() -> m_launcher.runLauncherWithPower(), m_launcher));
   }
 
   /**
@@ -150,7 +167,7 @@ public class RobotContainer {
 
     var thetaController =
         new ProfiledPIDController(
-            AutoConstants.kPThetaController, 0.5, 0.5, AutoConstants.kThetaControllerConstraints);
+            AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
     SwerveControllerCommand swerveControllerCommand =

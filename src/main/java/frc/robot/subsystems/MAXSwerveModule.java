@@ -37,13 +37,8 @@ public class MAXSwerveModule {
     m_drivingSparkMax = new CANSparkMax(drivingCANId, MotorType.kBrushless);
     m_turningSparkMax = new CANSparkMax(turningCANId, MotorType.kBrushless);
 
-    // MAXSwerveModule m_frontLeft = new MAXSwerveModule(2, 1, 0.0);
-    // MAXSwerveModule m_frontRight = new MAXSwerveModule(8, 7, 0.0);
-    // MAXSwerveModule m_rearLeft = new MAXSwerveModule(4, 3, 0.0);
-    // MAXSwerveModule m_rearRight = new MAXSwerveModule(6, 5, 0.0);
-
     // Factory reset, so we get the SPARKS MAX to a known state before configuring
-    // them. This is useful in case a SPA\RK MAX is swapped out.
+    // them. This is useful in case a SPARK MAX is swapped out.
     m_drivingSparkMax.restoreFactoryDefaults();
     m_turningSparkMax.restoreFactoryDefaults();
 
